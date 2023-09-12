@@ -1,5 +1,6 @@
 package com.unidev.application.services;
 
+import com.unidev.application.dtos.AddWalletRequestDTO;
 import com.unidev.application.entities.Currency;
 import com.unidev.application.entities.Wallet;
 import com.unidev.application.entities.WalletTransaction;
@@ -30,6 +31,19 @@ public class WalletService {
     private final WalletTransactionRepository walletTransactionRepository;
 
     private List<Wallet> wallets = new ArrayList<>();
+
+    public Wallet save(AddWalletRequestDTO requestDTO){
+        Currency currency = this.currencyRepository.findById(requestDTO.getCurrency_code()).orElseThrow(
+                ()-> new RuntimeException("Wallet not found"));
+        Wallet wallet = Wallet.builder()
+                .balance(requestDTO.getBalance())
+                .id(UUID.randomUUID().toString())
+                .created_at(System.currentTimeMillis())
+                .user_id("user1")
+                .currency(currency)
+                .build();
+        return this.walletRepository.save(wallet);
+    }
 
     public void loadData() throws IOException {
         URI uri = new ClassPathResource("currency.data.csv").getURI();
