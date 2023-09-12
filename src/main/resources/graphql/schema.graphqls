@@ -1,5 +1,6 @@
 type Query {
-    userWallets :  [Wallet]
+    userWallets :  [Wallet],
+    walletById(id: String) : Wallet
 }
 
 type Wallet{
