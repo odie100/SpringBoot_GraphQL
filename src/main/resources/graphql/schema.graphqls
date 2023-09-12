@@ -4,7 +4,8 @@ type Query {
 }
 
 type Mutation{
-    addWallet(addWalletRequestDTO: AddWalletRequestDTO) : Wallet
+    addWallet(addWalletRequestDTO: AddWalletRequestDTO) : Wallet,
+    walletTransfer(source_wallet_id : String, destination_wallet_id : String, amount : Float) : [WalletTransaction]
 }
 
 input AddWalletRequestDTO{
@@ -32,5 +33,7 @@ type WalletTransaction{
     timestamp : Float,
     wallet : Wallet,
     amount : Float,
-    type : String
+    type : String,
+    currentSaleCurrencyPrice : Float,
+    currentPurchaseCurrencyPrice : Float
 }

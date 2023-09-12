@@ -8,6 +8,7 @@ import com.unidev.application.enums.TransactionType;
 import com.unidev.application.repositories.CurrencyRepository;
 import com.unidev.application.repositories.WalletRepository;
 import com.unidev.application.repositories.WalletTransactionRepository;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -18,19 +19,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 @AllArgsConstructor
 @Service
+@Transactional
 public class WalletService {
 
     private final CurrencyRepository currencyRepository;
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
 
-    private List<Wallet> wallets = new ArrayList<>();
+    private final List<Wallet> wallets = new ArrayList<>();
 
     public Wallet save(AddWalletRequestDTO requestDTO){
         Currency currency = this.currencyRepository.findById(requestDTO.getCurrency_code()).orElseThrow(
@@ -43,6 +46,38 @@ public class WalletService {
                 .currency(currency)
                 .build();
         return this.walletRepository.save(wallet);
+    }
+
+    public List<WalletTransaction> walletTransfer(String sourceWalletId, String destinationWalletId, Double amount){
+        Wallet source_wallet = this.walletRepository.findById(sourceWalletId).orElseThrow(
+                ()-> new RuntimeException("Wallet not found"));
+        Wallet destination_wallet = this.walletRepository.findById(destinationWalletId).orElseThrow(
+                ()->new RuntimeException("Wallet not found"));
+
+        WalletTransaction sourceWalletTransaction = WalletTransaction.builder()
+                .timestamp(System.currentTimeMillis())
+                .type(TransactionType.DEBIT)
+                .wallet(source_wallet)
+                .amount(amount)
+                .currentPurchaseCurrencyPrice(source_wallet.getCurrency().getPurchase_price())
+                .currentSaleCurrencyPrice(source_wallet.getCurrency().getSale_price())
+                .build();
+        this.walletTransactionRepository.save(sourceWalletTransaction);
+        source_wallet.setBalance(source_wallet.getBalance() - amount);
+
+        //TODO: Calculate the amount from source to destination (get SalePrice and purchasePrice)
+        WalletTransaction destinationWalletTransaction = WalletTransaction.builder()
+                .timestamp(System.currentTimeMillis())
+                .amount(amount)
+                .currentSaleCurrencyPrice(destination_wallet.getCurrency().getSale_price())
+                .currentPurchaseCurrencyPrice(destination_wallet.getCurrency().getPurchase_price())
+                .type(TransactionType.CREDIT)
+                .wallet(destination_wallet)
+                .build();
+        this.walletTransactionRepository.save(destinationWalletTransaction);
+        destination_wallet.setBalance(destination_wallet.getBalance() + amount);
+
+        return Arrays.asList(sourceWalletTransaction,destinationWalletTransaction);
     }
 
     public void loadData() throws IOException {

@@ -2,6 +2,7 @@ package com.unidev.application.api;
 
 import com.unidev.application.dtos.AddWalletRequestDTO;
 import com.unidev.application.entities.Wallet;
+import com.unidev.application.entities.WalletTransaction;
 import com.unidev.application.repositories.WalletRepository;
 import com.unidev.application.services.WalletService;
 import lombok.AllArgsConstructor;
@@ -32,5 +33,10 @@ public class WalletGraphQLAPI {
     @MutationMapping
     private Wallet addWallet(@Argument AddWalletRequestDTO addWalletRequestDTO){
         return this.walletService.save(addWalletRequestDTO);
+    }
+
+    @MutationMapping
+    private List<WalletTransaction> walletTransfer(@Argument String source_wallet_id, @Argument String destination_wallet_id, @Argument Double amount){
+        return this.walletService.walletTransfer(source_wallet_id,destination_wallet_id,amount);
     }
 }
